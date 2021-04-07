@@ -4,21 +4,25 @@
 
 using namespace std::chrono;
 
-EventQueue queue(32 * EVENTS_EVENT_SIZE);
+EventQueue queue_wave(32 * EVENTS_EVENT_SIZE);
+EventQueue queue_menu(32 *EVENTS_EVENT_SIZE);
 Thread thread;
 
 
 uLCD_4DGL uLCD(D1, D0, D2); // serial tx, serial rx, reset pin;
+/*InterruptIn up(D13);
+InterruptIn down(D11);
+InterruptIn confirm(D12);*/
 BusIn selections(D13, D12, D11);
 DigitalOut out(D10);
 AnalogOut Aout(PA_4);
 AnalogIn Ain(A0);
 
 void sampling(int rate);
-void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[], int steps);
+void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[], int stime, int choice);
 void menu(int i);
 
-float ADCdata[10000] = {0};
+float ADCdata[128] = {0};
 
 int main(){
     uLCD.printf("\nHello uLCD World\n");
@@ -58,22 +62,48 @@ int main(){
               ThisThread::sleep_for(10ms);
               break;
         }
+        /*
+        if(up.rise){
+            
+            queue_menu.dispatch();
+            if(i >= 3){
+                  i=0;
+                  queue_menu.call(&menu, i);
+              } 
+              else{
+                  i++;
+                  queue_menu.call(&menu, i);
+              }
+        }
+        else if(down){
+            if(i <= 0){
+                  i = 3;
+                  queue_menu.call(&menu, i);
+              } 
+              else{
+                  i--;
+                  queue_menu.call(&menu, i);
+              }
+        }
+        else if(confirm){
+            flag =1 ;break;
+        }*/
         if(flag ==1){
-            queue.call(&sampling, 820);
+            queue_wave.call(&sampling, 128);
             Thread eventThread(osPriorityNormal);
-            eventThread.start(callback(&queue,&EventQueue::dispatch_forever));
+            eventThread.start(callback(&queue_wave,&EventQueue::dispatch_forever));
             
             if(i == 0){
-                wave_gen(Aout, Ain, ADCdata,  100); // 135Hz
+                wave_gen(Aout, Ain,  ADCdata, 800, 1); // 135Hz
             }
             else if(i == 1){
-                wave_gen(Aout, Ain,  ADCdata, 200);//  270Hz
+                wave_gen(Aout, Ain,  ADCdata, 400, 2);//  270Hz
             }
             else if(i == 2){
-                wave_gen(Aout, Ain,  ADCdata, 300);//  410Hz
+                wave_gen(Aout, Ain,  ADCdata, 200, 3);//  410Hz
             }
             else if(i == 3){
-                wave_gen(Aout, Ain,  ADCdata, 300);//  410Hz
+                wave_gen(Aout, Ain,  ADCdata, 100, 4);//  410Hz
             }
         }
     }
@@ -82,7 +112,7 @@ int main(){
 
 
 void menu(int i){
-
+    uLCD.cls();
     uLCD.text_width(2);
     uLCD.text_height(2);
     const char *options[4] = { "1", "1/2", 
@@ -102,20 +132,22 @@ void menu(int i){
     }
 }
 
-void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[],  int steps){
+void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[],  int stime, int choice){
     
-    
+    int w_time = 80 *choice;
     while(1){
         int i =0;
-        while(i<90){
+        
+        while(i<100){
             aout = 0.01*i;
-            i = i+0.01*steps;
-            wait_us(50);
+            i = i+1;
+            wait_us(stime);
         }
+        ThisThread::sleep_for(w_time*1ms);
         while(i>0){
             aout = 0.01*i;
-            i = i-0.09*steps;
-            wait_us(50);
+            i = i-1;
+            wait_us(stime);
         }
     }
    
@@ -124,13 +156,13 @@ void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[],  int steps){
 
 void sampling(int rate){
     while(1){
-        for(int i=0; i<1000; i++){
+        for(int i=0; i<128; i++){
             ADCdata[i] = Ain*3.3;
             ThisThread::sleep_for(1000ms/rate);
         }
-        for(int i=0; i<1000;i++){
+        for(int i=0; i<128;i++){
             printf("%f\r\n", ADCdata[i]);
         }
-        ThisThread::sleep_for(rate*10ms);
+        ThisThread::sleep_for(5000ms);
     }
 }
