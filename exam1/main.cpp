@@ -122,7 +122,7 @@ void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[],  int stime, int c
     while(1){
         int i =0;
         
-        while(i<100){
+        while(i<91){
             aout = 0.01*i;
             i = i+1;
             wait_us(stime);
