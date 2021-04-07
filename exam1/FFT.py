@@ -31,7 +31,7 @@ serdev = '/dev/ttyACM0'
 
 s = serial.Serial(serdev)
 
-for x in range(1, int(Fs)):
+for x in range(0, int(Fs)):
 
     line=s.readline() # Read an echo string from B_L4S5I_IOT01A terminated with '\n'
 
