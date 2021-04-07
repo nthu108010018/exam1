@@ -1,0 +1,8 @@
+# exam1
+
+用interrupt in作為輸入端 
+因為InterruptIn無法單獨此用較大的程式庫，須配合EventQueue,thread等功能以及uLCD能寫menu
+
+用analogout 輸出波型
+sampling則是使用analogin配合thread 以及eventqueue去做到同時在輸出波行時讀入波再加上printf的動作
+FFT.py則是使用課堂上使用過的code
