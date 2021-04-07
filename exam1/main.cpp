@@ -10,30 +10,34 @@ Thread thread;
 
 
 uLCD_4DGL uLCD(D1, D0, D2); // serial tx, serial rx, reset pin;
-/*InterruptIn up(D13);
+InterruptIn up(D13);
 InterruptIn down(D11);
-InterruptIn confirm(D12);*/
-BusIn selections(D13, D12, D11);
+InterruptIn confirm(D12);
 DigitalOut out(D10);
 AnalogOut Aout(PA_4);
 AnalogIn Ain(A0);
+Thread t;
+void fup();
 
+void fdown();
+
+void flagchange();
 void sampling(int rate);
 void wave_gen(AnalogOut &aout, AnalogIn &ain, float adcData[], int stime, int choice);
 void menu(int i);
 
+int i = 0;
+int flag = 0;
 float ADCdata[128] = {0};
 
 int main(){
     uLCD.printf("\nHello uLCD World\n");
     uLCD.printf("\n  Starting Demo...");
-    int i = 0;
     out = 1;
     menu(i);
-    int flag = 0;
     
     while(1){
-        switch(selections){
+        /*switch(selections){
             case 0x4 : // down
               if(i >= 3){
                   i=0;
@@ -61,49 +65,29 @@ int main(){
               }
               ThisThread::sleep_for(10ms);
               break;
-        }
-        /*
-        if(up.rise){
-            
-            queue_menu.dispatch();
-            if(i >= 3){
-                  i=0;
-                  queue_menu.call(&menu, i);
-              } 
-              else{
-                  i++;
-                  queue_menu.call(&menu, i);
-              }
-        }
-        else if(down){
-            if(i <= 0){
-                  i = 3;
-                  queue_menu.call(&menu, i);
-              } 
-              else{
-                  i--;
-                  queue_menu.call(&menu, i);
-              }
-        }
-        else if(confirm){
-            flag =1 ;break;
         }*/
+        ThisThread::sleep_for(10ms);
+        t.start(callback(&queue_menu, &EventQueue::dispatch_forever));
+        up.rise(fup);
+        down.rise(fdown);
+        confirm.rise(flagchange);
+        
         if(flag ==1){
             queue_wave.call(&sampling, 128);
             Thread eventThread(osPriorityNormal);
             eventThread.start(callback(&queue_wave,&EventQueue::dispatch_forever));
             
             if(i == 0){
-                wave_gen(Aout, Ain,  ADCdata, 800, 1); // 135Hz
+                wave_gen(Aout, Ain,  ADCdata, 800, 1);
             }
             else if(i == 1){
-                wave_gen(Aout, Ain,  ADCdata, 400, 2);//  270Hz
+                wave_gen(Aout, Ain,  ADCdata, 400, 2);
             }
             else if(i == 2){
-                wave_gen(Aout, Ain,  ADCdata, 200, 3);//  410Hz
+                wave_gen(Aout, Ain,  ADCdata, 200, 3);
             }
             else if(i == 3){
-                wave_gen(Aout, Ain,  ADCdata, 100, 4);//  410Hz
+                wave_gen(Aout, Ain,  ADCdata, 100, 4);
             }
         }
     }
@@ -165,4 +149,28 @@ void sampling(int rate){
         }
         ThisThread::sleep_for(5000ms);
     }
+}
+void fup(){
+    if(i >= 3){
+        i=0;
+        queue_menu.call(&menu, i);
+} 
+    else{
+        i++;
+        queue_menu.call(&menu, i);
+    }
+}
+
+void fdown(){
+    if(i <= 0){
+        i = 3;
+        queue_menu.call(&menu, i);
+} 
+    else{
+        i--;
+        queue_menu.call(&menu, i);
+    }
+}
+void flagchange(){
+    flag = 1;
 }
